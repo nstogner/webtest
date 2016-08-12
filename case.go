@@ -3,6 +3,7 @@ package webtest
 import (
 	"bytes"
 	"encoding/json"
+	"encoding/xml"
 	"errors"
 	"fmt"
 	"io"
@@ -57,7 +58,7 @@ func parseResponse(t Fataler, tc TestCase, r *httptest.ResponseRecorder, entity 
 			t.Fatal(failStr(tc, "unable to decode response as JSON", err))
 		}
 	} else if strings.Contains(ct, "xml") {
-		if err := json.Unmarshal(r.Body.Bytes(), tc.ResponseEntity); err != nil {
+		if err := xml.Unmarshal(r.Body.Bytes(), tc.ResponseEntity); err != nil {
 			t.Fatal(failStr(tc, "unable to decode response as JSON", err))
 		}
 	} else {
