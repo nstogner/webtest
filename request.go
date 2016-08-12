@@ -8,12 +8,16 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
-	"testing"
 	"time"
 )
 
 // Timeout is the timeout on a given request.
 var Timeout = 1 * time.Minute
+
+// Fataler is defined to match a testing.B or testing.T.
+type Fataler interface {
+	Fatalf(string, ...interface{})
+}
 
 // Response wraps a *http.Response.
 type Response struct {
@@ -22,7 +26,7 @@ type Response struct {
 }
 
 // DoReq runs a *http.Request.
-func DoReq(t *testing.T, req *http.Request) *Response {
+func DoReq(t Fataler, req *http.Request) *Response {
 	resp, err := (&http.Client{Timeout: Timeout}).Do(req)
 	if err != nil {
 		t.Fatalf("unexpected error issuing HTTP request: %s", err)
@@ -33,7 +37,7 @@ func DoReq(t *testing.T, req *http.Request) *Response {
 }
 
 // Do constructs a *http.Request and runs it.
-func Do(t *testing.T, ts *httptest.Server, method, path string, body []byte) *Response {
+func Do(t Fataler, ts *httptest.Server, method, path string, body []byte) *Response {
 	req, err := http.NewRequest(method, fmt.Sprintf("%s%s", ts.URL, path), bytes.NewReader(body))
 	if err != nil {
 		t.Fatalf("unable to generate HTTP request: %s", err)
