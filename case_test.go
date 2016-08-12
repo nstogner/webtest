@@ -1,14 +1,14 @@
 package webtest
 
 import (
-	"log"
+	"fmt"
 	"net/http"
 	"testing"
 )
 
 func TestRun(t *testing.T) {
 	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		log.Println(r)
+		fmt.Fprint(w, "{}")
 	})
 
 	cases := []TestCase{

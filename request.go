@@ -16,6 +16,7 @@ var Timeout = 1 * time.Minute
 
 // Fataler is defined to match a testing.B or testing.T.
 type Fataler interface {
+	Fatal(...interface{})
 	Fatalf(string, ...interface{})
 }
 
