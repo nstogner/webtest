@@ -3,10 +3,12 @@ package webtest
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 )
 
 // TestCase is an http test case.
@@ -38,12 +40,23 @@ func Run(t Fataler, handler http.Handler, cases []TestCase) {
 
 		handler.ServeHTTP(rec, req)
 
-		// switch rec.Header().Get("Content-Type")
-		if err := json.Unmarshal(rec.Body.Bytes(), tc.ResponseEntity); err != nil {
-			t.Fatal(failStr(tc, "unable to decode response as JSON", err))
-		}
-		if err := tc.Validate(tc.ResponseEntity); err != nil {
-			t.Fatal(failStr(tc, "validation failed", err))
+		ct := rec.Header().Get("Content-Type")
+		if strings.Contains(ct, "json") {
+			if err := json.Unmarshal(rec.Body.Bytes(), tc.ResponseEntity); err != nil {
+				t.Fatal(failStr(tc, "unable to decode response as JSON", err))
+			}
+			if err := tc.Validate(tc.ResponseEntity); err != nil {
+				t.Fatal(failStr(tc, "validation failed", err))
+			}
+		} else if strings.Contains(ct, "xml") {
+			if err := json.Unmarshal(rec.Body.Bytes(), tc.ResponseEntity); err != nil {
+				t.Fatal(failStr(tc, "unable to decode response as JSON", err))
+			}
+			if err := tc.Validate(tc.ResponseEntity); err != nil {
+				t.Fatal(failStr(tc, "validation failed", err))
+			}
+		} else if tc.Validate != nil {
+			t.Fatal(failStr(tc, "unable to validate response", errors.New("missing Content-Type header")))
 		}
 	}
 }

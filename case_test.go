@@ -1,6 +1,7 @@
 package webtest
 
 import (
+	"errors"
 	"fmt"
 	"net/http"
 	"testing"
@@ -8,15 +9,24 @@ import (
 
 func TestRun(t *testing.T) {
 	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		fmt.Fprint(w, "{}")
+		w.Header().Set("Content-Type", "application/json")
+		fmt.Fprint(w, `{"foo":"bar"}`)
 	})
 
+	type foo struct {
+		Foo string `json:"foo"`
+	}
 	cases := []TestCase{
 		{
-			Name:   "retrieve users",
-			Method: "GET",
-			URL:    "/users",
+			Name:           "retrieve users",
+			Method:         "GET",
+			URL:            "/users",
+			ResponseEntity: &foo{},
 			Validate: func(e interface{}) error {
+				f := e.(*foo)
+				if f.Foo != "bar" {
+					return errors.New("expected field foo == 'bar'")
+				}
 				return nil
 			},
 		},
