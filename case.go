@@ -40,25 +40,30 @@ func Run(t Fataler, handler http.Handler, cases []TestCase) {
 
 		handler.ServeHTTP(rec, req)
 
-		ct := rec.Header().Get("Content-Type")
-		if strings.Contains(ct, "json") {
-			if err := json.Unmarshal(rec.Body.Bytes(), tc.ResponseEntity); err != nil {
-				t.Fatal(failStr(tc, "unable to decode response as JSON", err))
-			}
-			if err := tc.Validate(tc.ResponseEntity); err != nil {
-				t.Fatal(failStr(tc, "validation failed", err))
-			}
-		} else if strings.Contains(ct, "xml") {
-			if err := json.Unmarshal(rec.Body.Bytes(), tc.ResponseEntity); err != nil {
-				t.Fatal(failStr(tc, "unable to decode response as JSON", err))
-			}
+		if e := parseResponse(t, tc, rec, tc.ResponseEntity); e == nil {
 			if err := tc.Validate(tc.ResponseEntity); err != nil {
 				t.Fatal(failStr(tc, "validation failed", err))
 			}
 		} else if tc.Validate != nil {
-			t.Fatal(failStr(tc, "unable to validate response", errors.New("missing Content-Type header")))
+			t.Fatal(failStr(tc, "unable to validate response", e))
 		}
 	}
+}
+
+func parseResponse(t Fataler, tc TestCase, r *httptest.ResponseRecorder, entity interface{}) error {
+	ct := r.Header().Get("Content-Type")
+	if strings.Contains(ct, "json") {
+		if err := json.Unmarshal(r.Body.Bytes(), tc.ResponseEntity); err != nil {
+			t.Fatal(failStr(tc, "unable to decode response as JSON", err))
+		}
+	} else if strings.Contains(ct, "xml") {
+		if err := json.Unmarshal(r.Body.Bytes(), tc.ResponseEntity); err != nil {
+			t.Fatal(failStr(tc, "unable to decode response as JSON", err))
+		}
+	} else {
+		return errors.New("missing Content-Type header")
+	}
+	return nil
 }
 
 func failStr(tc TestCase, msg string, err error) string {
