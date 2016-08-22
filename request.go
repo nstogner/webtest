@@ -6,6 +6,7 @@ import (
 	"encoding/xml"
 	"errors"
 	"fmt"
+	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
 	"time"
@@ -66,7 +67,8 @@ func (r *Response) Expect(exp E) *Response {
 
 	if exp.Status > 0 {
 		if got := r.StatusCode; got != exp.Status {
-			r.Fail(fmt.Errorf("expected status %v, got: %v", exp, got))
+			b, _ := ioutil.ReadAll(r.Body)
+			r.Fail(fmt.Errorf("expected status %v, got: %v with body:\n%s", exp.Status, got, b))
 		}
 	}
 
