@@ -56,8 +56,6 @@ type E struct {
 
 // Expect enforces expectations (E). It also closes the Request.Body.
 func (r *Response) Expect(exp E) *Response {
-	defer r.Body.Close()
-
 	// Catch bad test-cases.
 	if exp.JSON != nil && exp.XML != nil {
 		r.Fail(errors.New("BAD TEST CASE: UNABLE TO UNMARSHAL RESPONSE TO XML AND JSON"))
@@ -68,17 +66,22 @@ func (r *Response) Expect(exp E) *Response {
 	if exp.Status > 0 {
 		if got := r.StatusCode; got != exp.Status {
 			b, _ := ioutil.ReadAll(r.Body)
+			r.Body.Close()
 			r.Fail(fmt.Errorf("expected status %v, got: %v with body:\n%s", exp.Status, got, b))
 		}
 	}
 
 	if exp.JSON != nil {
-		if err := json.NewDecoder(r.Body).Decode(exp.JSON); err != nil {
+		err := json.NewDecoder(r.Body).Decode(exp.JSON)
+		r.Body.Close()
+		if err != nil {
 			r.Fail(fmt.Errorf("unable to decode response as JSON: %s", err))
 		}
 	}
 	if exp.XML != nil {
-		if err := xml.NewDecoder(r.Body).Decode(exp.XML); err != nil {
+		err := xml.NewDecoder(r.Body).Decode(exp.XML)
+		r.Body.Close()
+		if err != nil {
 			r.Fail(fmt.Errorf("unable to decode response as JSON: %s", err))
 		}
 	}
